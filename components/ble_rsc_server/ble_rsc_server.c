@@ -164,9 +164,11 @@ static int rsc_gap_event(struct ble_gap_event *event, void *arg)
     switch (event->type) {
     case BLE_GAP_EVENT_CONNECT:
         if (event->connect.status == 0) {
+            // NimBLE delivers CONNECT only after the remote version/feature
+            // reads finish, so a bonded watch may already have subscribed.
+            // Don't clear s_notifications_enabled here; DISCONNECT resets it.
             s_conn_handle = event->connect.conn_handle;
             s_connected = true;
-            s_notifications_enabled = false;
             rsc_log('I', "Garmin connected");
             if (s_conn_cb) s_conn_cb(true);
         } else {
@@ -196,6 +198,7 @@ static int rsc_gap_event(struct ble_gap_event *event, void *arg)
 
     case BLE_GAP_EVENT_SUBSCRIBE:
         if (event->subscribe.attr_handle == s_rsc_measurement_handle) {
+            s_conn_handle = event->subscribe.conn_handle;
             s_notifications_enabled = event->subscribe.cur_notify;
             rsc_log('I', "Garmin %s RSC notifications",
                     event->subscribe.cur_notify ? "enabled" : "disabled");
