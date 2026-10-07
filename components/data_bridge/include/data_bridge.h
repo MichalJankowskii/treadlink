@@ -24,6 +24,8 @@ typedef struct {
 
 void data_bridge_init(const treadlink_config_t *config);
 void data_bridge_update_config(const treadlink_config_t *config);
+// Clear per-connection state (call when a treadmill connects)
+void data_bridge_reset(void);
 rsc_data_t data_bridge_convert(const ftms_treadmill_data_t *ftms);
 
 // Get the last converted speed in km/h (post mph correction) for UI display

@@ -81,8 +81,33 @@ static int dis_chr_access(uint16_t conn_handle, uint16_t attr_handle,
     return 0;
 }
 
+// Battery Service: mains-powered, always report 100%
+static const uint8_t BATTERY_LEVEL = 100;
+
+static int bas_chr_access(uint16_t conn_handle, uint16_t attr_handle,
+                          struct ble_gatt_access_ctxt *ctxt, void *arg)
+{
+    if (ctxt->op == BLE_GATT_ACCESS_OP_READ_CHR) {
+        os_mbuf_append(ctxt->om, &BATTERY_LEVEL, sizeof(BATTERY_LEVEL));
+    }
+    return 0;
+}
+
 // GATT service definitions
 static const struct ble_gatt_svc_def rsc_svcs[] = {
+    {
+        // Battery Service (0x180F)
+        .type = BLE_GATT_SVC_TYPE_PRIMARY,
+        .uuid = BLE_UUID16_DECLARE(0x180F),
+        .characteristics = (struct ble_gatt_chr_def[]) {
+            {
+                .uuid = BLE_UUID16_DECLARE(0x2A19), // Battery Level
+                .access_cb = bas_chr_access,
+                .flags = BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_NOTIFY,
+            },
+            {0},
+        },
+    },
     {
         // Device Information Service (0x180A)
         .type = BLE_GATT_SVC_TYPE_PRIMARY,
@@ -139,9 +164,11 @@ static int rsc_gap_event(struct ble_gap_event *event, void *arg)
     switch (event->type) {
     case BLE_GAP_EVENT_CONNECT:
         if (event->connect.status == 0) {
+            // NimBLE delivers CONNECT only after the remote version/feature
+            // reads finish, so a bonded watch may already have subscribed.
+            // Don't clear s_notifications_enabled here; DISCONNECT resets it.
             s_conn_handle = event->connect.conn_handle;
             s_connected = true;
-            s_notifications_enabled = false;
             rsc_log('I', "Garmin connected");
             if (s_conn_cb) s_conn_cb(true);
         } else {
@@ -171,6 +198,7 @@ static int rsc_gap_event(struct ble_gap_event *event, void *arg)
 
     case BLE_GAP_EVENT_SUBSCRIBE:
         if (event->subscribe.attr_handle == s_rsc_measurement_handle) {
+            s_conn_handle = event->subscribe.conn_handle;
             s_notifications_enabled = event->subscribe.cur_notify;
             rsc_log('I', "Garmin %s RSC notifications",
                     event->subscribe.cur_notify ? "enabled" : "disabled");

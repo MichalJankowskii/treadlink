@@ -54,18 +54,53 @@ A printable enclosure is provided in the `case/` directory:
 
 ## Building
 
-Requires [PlatformIO](https://platformio.org/).
+Requires [PlatformIO Core](https://docs.platformio.org/en/latest/core/installation/index.html) (CLI) or the PlatformIO IDE extension for VS Code. On first build, PlatformIO downloads the pinned `espressif32` platform (ESP-IDF 5.5.3) and toolchain automatically. This takes several minutes.
+
+### Build
 
 ```bash
-# Build
+git clone https://github.com/MichalJankowskii/treadlink.git
+cd treadlink
 pio run
+```
 
-# Flash
-pio run -t upload
+The firmware image is written to `.pio/build/seeed_xiao_esp32s3/firmware.bin`.
 
-# Monitor serial output
+### Flash to the device
+
+1. Connect the XIAO ESP32-S3 over USB-C.
+2. Find its serial port. It shows up with USB ID `303A:1001` (e.g. `COM3` on Windows, `/dev/ttyACM0` on Linux, `/dev/cu.usbmodem*` on macOS):
+   ```bash
+   pio device list
+   ```
+3. Build and upload in one step:
+   ```bash
+   pio run -t upload --upload-port COM3
+   ```
+   `--upload-port` is optional when only one board is connected.
+
+Uploading keeps saved settings (Wi-Fi, saved treadmill, Garmin pairing). To wipe them and start fresh, erase the flash first with `pio run -t erase`.
+
+If the upload can't connect, put the board in bootloader mode. Hold **BOOT**, tap **RESET**, release **BOOT**, then upload again.
+
+### Monitor serial output
+
+```bash
 pio device monitor
 ```
+
+### Windows: user folder with non-ASCII characters
+
+If your Windows user name contains non-ASCII characters (e.g. `ł`, `ö`), the ESP-IDF build fails with `UnicodeDecodeError` or `Kconfig ... not found` errors. The path to `~/.platformio` ends up garbled in generated build files. Point PlatformIO at a folder with an ASCII-only path, then delete the stale build directory and rebuild:
+
+```powershell
+$env:PLATFORMIO_CORE_DIR = "C:\pio"   # any ASCII-only path
+$env:PYTHONUTF8 = "1"
+Remove-Item -Recurse -Force .pio\build
+pio run -t upload
+```
+
+PlatformIO downloads its packages into the new folder on first use. Junctions back to the old folder don't work, because CMake resolves them to the real path.
 
 ## Setup
 
