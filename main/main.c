@@ -68,6 +68,7 @@ static void restart_rsc_adv_if_needed(void)
 static void on_treadmill_connection(bool connected)
 {
     ESP_LOGI(TAG, "Treadmill %s", connected ? "connected" : "disconnected");
+    if (connected) data_bridge_reset();
     web_log(connected ? 'I' : 'W', "Treadmill %s", connected ? "connected" : "disconnected");
     update_led_state();
     web_server_set_connection_status(ftms_client_is_connected(), rsc_server_is_connected());
