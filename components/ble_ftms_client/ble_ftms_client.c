@@ -83,20 +83,25 @@ static void set_state(ftms_state_t new_state)
     }
 }
 
+// Last known treadmill values. Treadmills may split data across several
+// notifications, so fields absent from a packet keep their previous value.
+static ftms_treadmill_data_t s_td;
+
 // Parse FTMS Treadmill Data characteristic (0x2ACD)
 static void parse_treadmill_data(const uint8_t *data, uint16_t len)
 {
-    if (len < 4) return;
+    if (len < 2) return;
 
-    ftms_treadmill_data_t td = {0};
     uint16_t offset = 0;
-
     uint16_t flags = data[offset] | (data[offset + 1] << 8);
     offset += 2;
 
-    // Instantaneous Speed is ALWAYS present (0.01 km/h)
-    td.speed_001kmh = data[offset] | (data[offset + 1] << 8);
-    offset += 2;
+    // Instantaneous Speed (0.01 km/h) is present only when More Data (bit 0) is 0
+    if (!(flags & (1 << 0))) {
+        if (offset + 2 > len) return;
+        s_td.speed_001kmh = data[offset] | (data[offset + 1] << 8);
+        offset += 2;
+    }
 
     // Average Speed (bit 1)
     if (flags & (1 << 1)) {
@@ -107,21 +112,21 @@ static void parse_treadmill_data(const uint8_t *data, uint16_t len)
     // Total Distance (bit 2) - 3 bytes uint24
     if (flags & (1 << 2)) {
         if (offset + 3 > len) return;
-        td.total_distance_m = data[offset] | (data[offset + 1] << 8) | (data[offset + 2] << 16);
-        td.has_distance = true;
+        s_td.total_distance_m = data[offset] | (data[offset + 1] << 8) | (data[offset + 2] << 16);
+        s_td.has_distance = true;
         offset += 3;
     }
 
     // Inclination + Ramp Angle (bit 3) - sint16 + sint16
     if (flags & (1 << 3)) {
         if (offset + 4 > len) return;
-        td.incline_01pct = (int16_t)(data[offset] | (data[offset + 1] << 8));
-        td.has_incline = true;
+        s_td.incline_01pct = (int16_t)(data[offset] | (data[offset + 1] << 8));
+        s_td.has_incline = true;
         offset += 4;
     }
 
     if (s_data_cb) {
-        s_data_cb(&td);
+        s_data_cb(&s_td);
     }
 }
 
@@ -158,6 +163,7 @@ static int ftms_on_subscribe(uint16_t conn_handle, const struct ble_gatt_error *
 {
     if (error->status == 0) {
         ESP_LOGI(TAG, "Subscribed to treadmill data notifications");
+        memset(&s_td, 0, sizeof(s_td));
         set_state(FTMS_STATE_STREAMING);
         xTimerStop(s_discovery_timer, 0);
 
