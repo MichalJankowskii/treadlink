@@ -10,9 +10,9 @@ Built for the [Seeed Studio XIAO ESP32-S3](https://www.seeedstudio.com/XIAO-ESP3
 
 Flash directly from your browser — no tools required:
 
-**[Install TreadLink](https://nathanmarlor.github.io/treadlink/)** (Chrome/Edge, USB-C cable)
+**[Install TreadLink](https://michaljankowskii.github.io/treadlink/)** (Chrome/Edge, USB-C cable)
 
-Or download the binaries from the [latest release](https://github.com/nathanmarlor/treadlink/releases/latest).
+Or download the binaries from the [latest release](https://github.com/MichalJankowskii/treadlink/releases/latest).
 
 ## What it does
 
@@ -104,7 +104,7 @@ PlatformIO downloads its packages into the new folder on first use. Junctions ba
 
 ## Setup
 
-1. Flash firmware via the [web installer](https://nathanmarlor.github.io/treadlink/) or PlatformIO
+1. Flash firmware via the [web installer](https://michaljankowskii.github.io/treadlink/) or PlatformIO
 2. Connect to the **TreadLink** WiFi AP (password: `treadlink`)
 3. Browse to `192.168.4.1`
 4. Scan for your treadmill and connect
