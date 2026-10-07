@@ -64,7 +64,7 @@ jobs:
       - name: Update flash site manifest
         run: |
           VERSION=${GITHUB_REF_NAME}
-          BASE_URL="https://github.com/nathanmarlor/treadlink/releases/download/${VERSION}"
+          BASE_URL="https://github.com/${{ github.repository }}/releases/download/${VERSION}"
           cat > docs/manifest.json << EOF
           {
             "name": "TreadLink",
@@ -87,7 +87,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           VERSION=${GITHUB_REF_NAME}
-          BASE_URL="https://github.com/nathanmarlor/treadlink/releases/download/${VERSION}"
+          BASE_URL="https://github.com/${{ github.repository }}/releases/download/${VERSION}"
           MANIFEST=$(cat <<MEOF
           {
             "name": "TreadLink",
@@ -106,8 +106,8 @@ jobs:
           MEOF
           )
           # Use GitHub API to update file directly on main
-          EXISTING=$(gh api repos/nathanmarlor/treadlink/contents/docs/manifest.json --jq .sha 2>/dev/null || echo "")
-          echo "${MANIFEST}" | gh api repos/nathanmarlor/treadlink/contents/docs/manifest.json \
+          EXISTING=$(gh api repos/${{ github.repository }}/contents/docs/manifest.json --jq .sha 2>/dev/null || echo "")
+          echo "${MANIFEST}" | gh api repos/${{ github.repository }}/contents/docs/manifest.json \
             -X PUT \
             -f message="Update flash site manifest for ${VERSION}" \
             -f content="$(echo "${MANIFEST}" | base64 -w0)" \

@@ -61,7 +61,7 @@ static int rsc_chr_access(uint16_t conn_handle, uint16_t attr_handle,
 // Device Information Service
 static const char *DIS_MANUFACTURER = "TreadLink";
 static const char *DIS_MODEL = "TL-1";
-static const char *DIS_FW_REV = "1.0.0";
+static const char *DIS_FW_REV = "1.1.0";
 
 static int dis_chr_access(uint16_t conn_handle, uint16_t attr_handle,
                           struct ble_gatt_access_ctxt *ctxt, void *arg)
