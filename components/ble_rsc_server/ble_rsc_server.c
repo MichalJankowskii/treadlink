@@ -81,8 +81,33 @@ static int dis_chr_access(uint16_t conn_handle, uint16_t attr_handle,
     return 0;
 }
 
+// Battery Service: mains-powered, always report 100%
+static const uint8_t BATTERY_LEVEL = 100;
+
+static int bas_chr_access(uint16_t conn_handle, uint16_t attr_handle,
+                          struct ble_gatt_access_ctxt *ctxt, void *arg)
+{
+    if (ctxt->op == BLE_GATT_ACCESS_OP_READ_CHR) {
+        os_mbuf_append(ctxt->om, &BATTERY_LEVEL, sizeof(BATTERY_LEVEL));
+    }
+    return 0;
+}
+
 // GATT service definitions
 static const struct ble_gatt_svc_def rsc_svcs[] = {
+    {
+        // Battery Service (0x180F)
+        .type = BLE_GATT_SVC_TYPE_PRIMARY,
+        .uuid = BLE_UUID16_DECLARE(0x180F),
+        .characteristics = (struct ble_gatt_chr_def[]) {
+            {
+                .uuid = BLE_UUID16_DECLARE(0x2A19), // Battery Level
+                .access_cb = bas_chr_access,
+                .flags = BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_NOTIFY,
+            },
+            {0},
+        },
+    },
     {
         // Device Information Service (0x180A)
         .type = BLE_GATT_SVC_TYPE_PRIMARY,
